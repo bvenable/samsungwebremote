@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+from sqs_listener import SqsListener
+import logging
+import sys
+import samsungctl
+
+if len(sys.argv) < 2:
+    print('usage: ', sys.argv[0], ' <ip>')
+    sys.exit(1)
+
+ip = sys.argv[1]
+
+config = {
+    "name": "samsungctl",
+    "description": "PC",
+    "id": "",
+    "host": ip,
+    "port": 8001,
+    "method": "websocket",
+    "timeout": 0,
+}
+
+
+
+logger = logging.getLogger('sqs_listener')
+logger.setLevel(logging.INFO)
+
+sh = logging.StreamHandler(sys.stdout)
+sh.setLevel(logging.INFO)
+
+formatstr = '[%(asctime)s - %(name)s - %(levelname)s]  %(message)s'
+formatter = logging.Formatter(formatstr)
+
+sh.setFormatter(formatter)
+logger.addHandler(sh)
+
+
+class MyListener(SqsListener):
+    def handle_message(self, body, attributes, messages_attributes):
+        logger.info(body['data']['command'])
+        with samsungctl.Remote(config) as remote:
+            remote.control(body['data']['command'])
+
+listener = MyListener('samsungctl.fifo', interval=5, max_number_of_messages=10, region_name='us-east-1')
+listener.listen()
+

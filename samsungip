@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+NETWORK=$(ip route | grep "proto kernel" | awk '{print $1}')
+if [ -n "${NETWORK}" ]; then
+	nmap -p8001 -T4 --open ${NETWORK}  | egrep --color=never -o "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
+fi
